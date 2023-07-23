@@ -93,39 +93,26 @@ impl App {
 
     fn update(&mut self, _args: &UpdateArgs) {
 
-        let ball_centerpoint_x:f32 = self.ball_x + BALL_WIDTH_RADIUS + self.ball_dx;
-        let ball_centerpoint_y:f32 = self.ball_y + BALL_WIDTH_RADIUS + self.ball_dy;
+        let pad_collision = Self::detect_collision(self.pad_x, self.pad_y, PAD_WIDTH, PAD_HEIGHT, self.ball_x + self.ball_dx, self.ball_y + self.ball_dy, BALL_WIDTH_RADIUS);
+        match pad_collision {
+            Some(Edge::Both) => { self.ball_dx = -self.ball_dx;self.ball_dy = -self.ball_dy; },
+            Some(Edge::HorizontalEdge) => { self.ball_dy = -self.ball_dy; },
+            Some(Edge::VerticalEdge) => { self.ball_dx = -self.ball_dx; },
+            None => {}
+        }
 
-        let closest_x = (ball_centerpoint_x.max(self.pad_x)).min(self.pad_x + PAD_WIDTH);
-        let closest_y = (ball_centerpoint_y.max(self.pad_y)).min(self.pad_y + PAD_HEIGHT);
-    
-        let distance_x = ball_centerpoint_x - closest_x;
-        let distance_y = ball_centerpoint_y - closest_y;
-        let distance_squared = distance_x * distance_x + distance_y * distance_y;
-    
-        if distance_squared < BALL_WIDTH_SQRD {
-            let vertical_collision = distance_x.abs() < BALL_WIDTH_RADIUS - 1.0;
-            let horizontal_collision = distance_y.abs() < BALL_WIDTH_RADIUS - 1.0;
-    
-            if vertical_collision && horizontal_collision {
-                self.ball_dx = -self.ball_dx;
-                self.ball_dy = -self.ball_dy;
-            } else if vertical_collision {
-                if self.ball_y < closest_y {
-                    self.ball_dy = -self.ball_dy;
-                } else {
-                    self.ball_dy = -self.ball_dy;
-                }
-            } else {
-                if self.ball_x < closest_x {
-                    self.ball_dx = -self.ball_dx;
-                } else {
-                    self.ball_dx = -self.ball_dx;
-                }
-            }
-        } 
         for edge in self.edges.iter_mut() {
-            let edge = Self::detect_collision(edge.x, edge.y, edge.width, edge.height, self.ball_x, self.ball_y, BALL_WIDTH_RADIUS);
+            let edge = Self::detect_collision(edge.x, edge.y, edge.width, edge.height, self.ball_x + self.ball_dx, self.ball_y + self.ball_dy, BALL_WIDTH_RADIUS);
+            match edge {
+                Some(Edge::Both) => { self.ball_dx = -self.ball_dx;self.ball_dy = -self.ball_dy; },
+                Some(Edge::HorizontalEdge) => { self.ball_dy = -self.ball_dy; },
+                Some(Edge::VerticalEdge) => { self.ball_dx = -self.ball_dx; },
+                None => {}
+            }
+        }
+
+        for brick in self.bricks.iter_mut() {
+            let edge = Self::detect_collision(brick.x, brick.y, brick.width, brick.height, self.ball_x + self.ball_dx, self.ball_y + self.ball_dy, BALL_WIDTH_RADIUS);
             match edge {
                 Some(Edge::Both) => { self.ball_dx = -self.ball_dx;self.ball_dy = -self.ball_dy; },
                 Some(Edge::HorizontalEdge) => { self.ball_dy = -self.ball_dy; },
@@ -138,7 +125,6 @@ impl App {
         self.ball_y += self.ball_dy;
 
     }
-
 
     fn detect_collision(x: f32, y: f32, width: f32, height: f32, ball_x: f32, ball_y: f32, ball_radius: f32) -> Option<Edge> {
         let ball_centerpoint_x:f32 = ball_x + ball_radius;
@@ -156,7 +142,7 @@ impl App {
             let horizontal_collision = distance_y.abs() < BALL_WIDTH_RADIUS - 1.0;
     
             if vertical_collision && horizontal_collision {
-                Some(Edge::Both);
+                return Some(Edge::Both);
             } else if vertical_collision {
                 return Some(Edge::HorizontalEdge);
             } else {
