@@ -40,7 +40,7 @@ pub struct App<'a> {
     pad_texture: Texture,
     ball_texture: Texture,
     edges: Vec<Rectangle>,
-    bricks: Vec<Brick<'a>>
+    bricks: Vec<Brick<'a>>,
 }
 
 pub struct Rectangle {
@@ -60,7 +60,14 @@ pub struct Brick<'a> {
 }
 
 impl<'a> Brick<'a> {
-    fn new(x: f32, y: f32, height: f32, width: f32, state: bool, texture: &'a Texture) -> Brick<'a> {
+    fn new(
+        x: f32,
+        y: f32,
+        height: f32,
+        width: f32,
+        state: bool,
+        texture: &'a Texture,
+    ) -> Brick<'a> {
         Brick {
             height: height,
             state: state,
@@ -116,7 +123,7 @@ impl<'a> App<'a> {
             img(&self.ball_texture, transform_ball, gl);
             for brick in self.bricks.iter_mut() {
                 if !brick.state {
-                    let transform_brick = c.transform.trans(brick.x as f64, brick.y as f64);                
+                    let transform_brick = c.transform.trans(brick.x as f64, brick.y as f64);
                     img(brick.texture, transform_brick, gl);
                 }
             }
@@ -200,7 +207,6 @@ impl<'a> App<'a> {
         }
         self.ball_x += self.ball_dx;
         self.ball_y += self.ball_dy;
-    
     }
 
     fn detect_collision(
@@ -325,7 +331,6 @@ fn get_bricks<'a>(texture: &'a Texture) -> Vec<Brick<'a>> {
         Brick::new(650.0, 100.0, 30.0, 80.0, false, &texture),
         Brick::new(760.0, 100.0, 30.0, 80.0, false, &texture),
         Brick::new(870.0, 100.0, 30.0, 80.0, false, &texture),
-        
         Brick::new(100.0, 200.0, 30.0, 80.0, false, &texture),
         Brick::new(210.0, 200.0, 30.0, 80.0, false, &texture),
         Brick::new(320.0, 200.0, 30.0, 80.0, false, &texture),
@@ -334,7 +339,6 @@ fn get_bricks<'a>(texture: &'a Texture) -> Vec<Brick<'a>> {
         Brick::new(650.0, 200.0, 30.0, 80.0, false, &texture),
         Brick::new(760.0, 200.0, 30.0, 80.0, false, &texture),
         Brick::new(870.0, 200.0, 30.0, 80.0, false, &texture),
-        
     ]
 }
 
