@@ -1,5 +1,5 @@
 [package]
-name = "rust_game"
+name = "breakout"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,8 +10,4 @@ piston = "0.53.2"
 piston2d-graphics = "0.43.0"
 pistoncore-glutin_window = "0.71.0"
 piston2d-opengl_graphics = "0.82.0"
-pistoncore-input = "1.0.1"
-image = "0.24.6"
 find_folder = "0.3.0"
-parry2d = "0.13.5"
-nalgebra = "0.32.3"

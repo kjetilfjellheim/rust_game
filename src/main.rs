@@ -1,8 +1,6 @@
 extern crate find_folder;
 extern crate glutin_window;
 extern crate graphics;
-extern crate image;
-extern crate nalgebra as na;
 extern crate opengl_graphics;
 extern crate piston;
 
@@ -348,6 +346,10 @@ fn main() {
         WindowSettings::new("Simple game", [WINDOW_HEIGHT as f64, WINDOW_WIDTH as f64])
             .graphics_api(opengl)
             .exit_on_esc(true)
+            .controllers(false)
+            .decorated(true)
+            .vsync(true)
+            .title(String::from("Breakout"))
             .build()
             .expect("Could not create window");
 
