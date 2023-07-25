@@ -1,4 +1,4 @@
-# Rst game (Breakout)
+# Rust game (Breakout)
 
 ## Description
 This is a simple breakout game implemented in Rust using the Piston game engine. It was implemented as a learning excercise using Rust. It is not a complete game, but implements most functionality.
