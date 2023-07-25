@@ -26,7 +26,7 @@ const PAD_MIN_HEIGTH: f32 = 800.0;
 const PAD_MAX_HEIGTH: f32 = 950.0;
 const PAD_HEIGHT: f32 = 20.0;
 
-pub struct App {
+pub struct App<'a> {
     gl: GlGraphics,
     ball_x: f32,
     ball_y: f32,
@@ -40,7 +40,7 @@ pub struct App {
     pad_texture: Texture,
     ball_texture: Texture,
     edges: Vec<Rectangle>,
-    bricks: Vec<Bricks>,
+    bricks: Vec<Brick<'a>>
 }
 
 pub struct Rectangle {
@@ -50,15 +50,27 @@ pub struct Rectangle {
     width: f32,
 }
 
-pub struct Bricks {
+pub struct Brick<'a> {
     x: f32,
     y: f32,
     height: f32,
     width: f32,
     state: bool,
-    texture: Texture,
+    texture: &'a Texture,
 }
 
+impl<'a> Brick<'a> {
+    fn new(x: f32, y: f32, height: f32, width: f32, state: bool, texture: &'a Texture) -> Brick<'a> {
+        Brick {
+            height: height,
+            state: state,
+            texture: &texture,
+            width: width,
+            x: x,
+            y: y,
+        }
+    }
+}
 
 #[derive(PartialEq, Clone)]
 pub enum Edge {
@@ -71,7 +83,7 @@ pub enum Part {
     Left,
     Right,
     Top,
-    Bottom
+    Bottom,
 }
 
 impl Rectangle {
@@ -85,7 +97,7 @@ impl Rectangle {
     }
 }
 
-impl App {
+impl<'a> App<'a> {
     fn render(&mut self, args: &RenderArgs) {
         const BACKGROUND: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
 
@@ -102,6 +114,12 @@ impl App {
             img(&self.pad_texture, transform_pad, gl);
             let transform_ball = c.transform.trans(ball_x, ball_y);
             img(&self.ball_texture, transform_ball, gl);
+            for brick in self.bricks.iter_mut() {
+                if !brick.state {
+                    let transform_brick = c.transform.trans(brick.x as f64, brick.y as f64);                
+                    img(brick.texture, transform_brick, gl);
+                }
+            }
         });
     }
 
@@ -153,31 +171,36 @@ impl App {
         }
 
         for brick in self.bricks.iter_mut() {
-            let edge = Self::detect_collision(
-                brick.x,
-                brick.y,
-                brick.width,
-                brick.height,
-                self.ball_x + self.ball_dx,
-                self.ball_y + self.ball_dy,
-            );
-            match edge {
-                Some(Edge::Both) => {
-                    self.ball_dx = -self.ball_dx;
-                    self.ball_dy = -self.ball_dy;
+            if !brick.state {
+                let edge = Self::detect_collision(
+                    brick.x,
+                    brick.y,
+                    brick.width,
+                    brick.height,
+                    self.ball_x + self.ball_dx,
+                    self.ball_y + self.ball_dy,
+                );
+                match edge {
+                    Some(Edge::Both) => {
+                        self.ball_dx = -self.ball_dx;
+                        self.ball_dy = -self.ball_dy;
+                        brick.state = true;
+                    }
+                    Some(Edge::HorizontalEdge) => {
+                        self.ball_dy = -self.ball_dy;
+                        brick.state = true;
+                    }
+                    Some(Edge::VerticalEdge) => {
+                        self.ball_dx = -self.ball_dx;
+                        brick.state = true;
+                    }
+                    None => {}
                 }
-                Some(Edge::HorizontalEdge) => {
-                    self.ball_dy = -self.ball_dy;
-                }
-                Some(Edge::VerticalEdge) => {
-                    self.ball_dx = -self.ball_dx;
-                }
-                None => {}
             }
         }
-
         self.ball_x += self.ball_dx;
         self.ball_y += self.ball_dy;
+    
     }
 
     fn detect_collision(
@@ -199,9 +222,10 @@ impl App {
         let distance_squared = distance_x * distance_x + distance_y * distance_y;
 
         if distance_squared < BALL_WIDTH_SQRD {
-            
-            let vertical_collision = distance_x.abs() < BALL_WIDTH_RADIUS - 1.0 && distance_y.abs() > 1.0;
-            let horizontal_collision = distance_y.abs() < BALL_WIDTH_RADIUS - 1.0 && distance_x.abs() > 1.0;
+            let vertical_collision =
+                distance_x.abs() < BALL_WIDTH_RADIUS - 1.0 && distance_y.abs() > 1.0;
+            let horizontal_collision =
+                distance_y.abs() < BALL_WIDTH_RADIUS - 1.0 && distance_x.abs() > 1.0;
 
             if vertical_collision && horizontal_collision {
                 return Some(Edge::Both);
@@ -220,8 +244,15 @@ impl App {
         let max_x = x.max(self.pad_x);
         let max_y = y.max(self.pad_y).min(PAD_MAX_HEIGTH).max(PAD_MIN_HEIGTH);
 
-        let collision = Self::detect_collision(min_x, min_y, max_x - min_x, max_y - min_y, self.ball_x, self.ball_y);
-        match collision { 
+        let collision = Self::detect_collision(
+            min_x,
+            min_y,
+            max_x - min_x,
+            max_y - min_y,
+            self.ball_x,
+            self.ball_y,
+        );
+        match collision {
             Some(Edge::Both) => {
                 self.ball_dx = (-self.ball_dx - self.pad_dx).max(-5.0).min(5.0);
                 self.ball_dy = (-self.ball_dy - self.pad_dy).max(-5.0).min(5.0);
@@ -232,30 +263,48 @@ impl App {
             Some(Edge::VerticalEdge) => {
                 self.ball_dx = (-self.ball_dx - self.pad_dx).max(-5.0).min(5.0);
             }
-            None => {}            
-        } 
+            None => {}
+        }
 
         self.pad_dx = self.pad_x - x + PAD_WIDTH_HALF;
-        self.pad_dy = self.pad_y - y;        
+        self.pad_dy = self.pad_y - y;
 
-        if (self.pad_y + PAD_HEIGHT) > (self.ball_y + BALL_WIDTH) && y < (self.ball_y + BALL_WIDTH) && collision.clone().is_some_and(|f|f == Edge::Both || f == Edge::HorizontalEdge) {
-            self.pad_y = (self.ball_y + BALL_WIDTH).min(PAD_MAX_HEIGTH).max(PAD_MIN_HEIGTH);
-        } else if self.pad_y < self.ball_y && y > self.ball_y && collision.clone().is_some_and(|f|f == Edge::Both || f == Edge::HorizontalEdge) {
+        if (self.pad_y + PAD_HEIGHT) > (self.ball_y + BALL_WIDTH)
+            && y < (self.ball_y + BALL_WIDTH)
+            && collision
+                .clone()
+                .is_some_and(|f| f == Edge::Both || f == Edge::HorizontalEdge)
+        {
+            self.pad_y = (self.ball_y + BALL_WIDTH)
+                .min(PAD_MAX_HEIGTH)
+                .max(PAD_MIN_HEIGTH);
+        } else if self.pad_y < self.ball_y
+            && y > self.ball_y
+            && collision
+                .clone()
+                .is_some_and(|f| f == Edge::Both || f == Edge::HorizontalEdge)
+        {
             self.pad_y = self.ball_y.min(PAD_MAX_HEIGTH).max(PAD_MIN_HEIGTH);
         } else {
             self.pad_y = y.min(PAD_MAX_HEIGTH).max(PAD_MIN_HEIGTH);
         }
 
-        if (self.pad_x + PAD_WIDTH) > (self.ball_x + BALL_WIDTH) && x < (self.ball_x + BALL_WIDTH) && collision.clone().is_some_and(|f|f == Edge::Both || f == Edge::VerticalEdge) {
+        if (self.pad_x + PAD_WIDTH) > (self.ball_x + BALL_WIDTH)
+            && x < (self.ball_x + BALL_WIDTH)
+            && collision
+                .clone()
+                .is_some_and(|f| f == Edge::Both || f == Edge::VerticalEdge)
+        {
             self.pad_x = self.ball_x + BALL_WIDTH;
-        } else if self.pad_x < self.ball_x && x > self.ball_x && collision.is_some_and(|f|f == Edge::Both || f == Edge::VerticalEdge) {
+        } else if self.pad_x < self.ball_x
+            && x > self.ball_x
+            && collision.is_some_and(|f| f == Edge::Both || f == Edge::VerticalEdge)
+        {
             self.pad_x = self.ball_x;
         } else {
             self.pad_x = x - PAD_WIDTH_HALF;
         }
-    
     }
-
 }
 
 fn get_edges() -> Vec<Rectangle> {
@@ -266,8 +315,27 @@ fn get_edges() -> Vec<Rectangle> {
     ]
 }
 
-fn get_bricks() -> Vec<Bricks> {
-    vec![]
+fn get_bricks<'a>(texture: &'a Texture) -> Vec<Brick<'a>> {
+    vec![
+        Brick::new(100.0, 100.0, 30.0, 80.0, false, &texture),
+        Brick::new(210.0, 100.0, 30.0, 80.0, false, &texture),
+        Brick::new(320.0, 100.0, 30.0, 80.0, false, &texture),
+        Brick::new(430.0, 100.0, 30.0, 80.0, false, &texture),
+        Brick::new(540.0, 100.0, 30.0, 80.0, false, &texture),
+        Brick::new(650.0, 100.0, 30.0, 80.0, false, &texture),
+        Brick::new(760.0, 100.0, 30.0, 80.0, false, &texture),
+        Brick::new(870.0, 100.0, 30.0, 80.0, false, &texture),
+        
+        Brick::new(100.0, 200.0, 30.0, 80.0, false, &texture),
+        Brick::new(210.0, 200.0, 30.0, 80.0, false, &texture),
+        Brick::new(320.0, 200.0, 30.0, 80.0, false, &texture),
+        Brick::new(430.0, 200.0, 30.0, 80.0, false, &texture),
+        Brick::new(540.0, 200.0, 30.0, 80.0, false, &texture),
+        Brick::new(650.0, 200.0, 30.0, 80.0, false, &texture),
+        Brick::new(760.0, 200.0, 30.0, 80.0, false, &texture),
+        Brick::new(870.0, 200.0, 30.0, 80.0, false, &texture),
+        
+    ]
 }
 
 fn main() {
@@ -295,6 +363,10 @@ fn main() {
     let ball_texture =
         Texture::from_path(ball, &TextureSettings::new()).expect("Could not find ball asset");
 
+    let brick: std::path::PathBuf = assets.join("brick.png");
+    let brick_texture =
+        Texture::from_path(brick, &TextureSettings::new()).expect("Could not find brick asset");
+
     let mut app = App {
         gl: GlGraphics::new(opengl),
         ball_x: 512.0,
@@ -309,7 +381,7 @@ fn main() {
         pad_texture,
         ball_texture,
         edges: get_edges(),
-        bricks: get_bricks(),
+        bricks: get_bricks(&brick_texture),
     };
 
     let mut events = Events::new(EventSettings::new());
