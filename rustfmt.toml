@@ -2,3 +2,14 @@
 #indent_style = "Block"
 #where_single_line = true
 #brace_style = "PreferSameLine"
+array_width = 60
+fn_params_layout = "Compressed"
+match_arm_leading_pipes =  "Never"
+match_block_trailing_comma = true
+merge_derives = true
+newline_style = "Unix"
+reorder_imports = true
+remove_nested_parens = true
+tab_spaces = 4
+use_try_shorthand = true
+use_small_heuristics = "Max"

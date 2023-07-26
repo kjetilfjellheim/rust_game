@@ -59,21 +59,9 @@ pub struct Brick<'a> {
 
 impl<'a> Brick<'a> {
     fn new(
-        x: f32,
-        y: f32,
-        height: f32,
-        width: f32,
-        state: bool,
-        texture: &'a Texture,
+        x: f32, y: f32, height: f32, width: f32, state: bool, texture: &'a Texture,
     ) -> Brick<'a> {
-        Brick {
-            height: height,
-            state: state,
-            texture: &texture,
-            width: width,
-            x: x,
-            y: y,
-        }
+        Brick { height: height, state: state, texture: &texture, width: width, x: x, y: y }
     }
 }
 
@@ -93,12 +81,7 @@ pub enum Part {
 
 impl Rectangle {
     fn new(x: f32, y: f32, width: f32, height: f32) -> Rectangle {
-        Rectangle {
-            x: x,
-            y: y,
-            height: height,
-            width: width,
-        }
+        Rectangle { x: x, y: y, height: height, width: width }
     }
 }
 
@@ -141,14 +124,14 @@ impl<'a> App<'a> {
             Some(Edge::Both) => {
                 self.ball_dx = (-self.ball_dx - self.pad_dx).max(-5.0).min(5.0);
                 self.ball_dy = (-self.ball_dy - self.pad_dy).max(-5.0).min(5.0);
-            }
+            },
             Some(Edge::HorizontalEdge) => {
                 self.ball_dy = (-self.ball_dy - self.pad_dy).max(-5.0).min(5.0);
-            }
+            },
             Some(Edge::VerticalEdge) => {
                 self.ball_dx = (-self.ball_dx - self.pad_dx).max(-5.0).min(5.0);
-            }
-            None => {}
+            },
+            None => {},
         }
 
         for edge in self.edges.iter_mut() {
@@ -164,14 +147,14 @@ impl<'a> App<'a> {
                 Some(Edge::Both) => {
                     self.ball_dx = -self.ball_dx;
                     self.ball_dy = -self.ball_dy;
-                }
+                },
                 Some(Edge::HorizontalEdge) => {
                     self.ball_dy = -self.ball_dy;
-                }
+                },
                 Some(Edge::VerticalEdge) => {
                     self.ball_dx = -self.ball_dx;
-                }
-                None => {}
+                },
+                None => {},
             }
         }
 
@@ -190,16 +173,16 @@ impl<'a> App<'a> {
                         self.ball_dx = -self.ball_dx;
                         self.ball_dy = -self.ball_dy;
                         brick.state = true;
-                    }
+                    },
                     Some(Edge::HorizontalEdge) => {
                         self.ball_dy = -self.ball_dy;
                         brick.state = true;
-                    }
+                    },
                     Some(Edge::VerticalEdge) => {
                         self.ball_dx = -self.ball_dx;
                         brick.state = true;
-                    }
-                    None => {}
+                    },
+                    None => {},
                 }
             }
         }
@@ -208,12 +191,7 @@ impl<'a> App<'a> {
     }
 
     fn detect_collision(
-        x: f32,
-        y: f32,
-        width: f32,
-        height: f32,
-        ball_x: f32,
-        ball_y: f32,
+        x: f32, y: f32, width: f32, height: f32, ball_x: f32, ball_y: f32,
     ) -> Option<Edge> {
         let ball_centerpoint_x: f32 = ball_x + BALL_WIDTH_RADIUS;
         let ball_centerpoint_y: f32 = ball_y + BALL_WIDTH_RADIUS;
@@ -260,14 +238,14 @@ impl<'a> App<'a> {
             Some(Edge::Both) => {
                 self.ball_dx = (-self.ball_dx - self.pad_dx).max(-5.0).min(5.0);
                 self.ball_dy = (-self.ball_dy - self.pad_dy).max(-5.0).min(5.0);
-            }
+            },
             Some(Edge::HorizontalEdge) => {
                 self.ball_dy = (-self.ball_dy - self.pad_dy).max(-5.0).min(5.0);
-            }
+            },
             Some(Edge::VerticalEdge) => {
                 self.ball_dx = (-self.ball_dx - self.pad_dx).max(-5.0).min(5.0);
-            }
-            None => {}
+            },
+            None => {},
         }
 
         self.pad_dx = self.pad_x - x + PAD_WIDTH_HALF;
@@ -275,18 +253,12 @@ impl<'a> App<'a> {
 
         if (self.pad_y + PAD_HEIGHT) > (self.ball_y + BALL_WIDTH)
             && y < (self.ball_y + BALL_WIDTH)
-            && collision
-                .clone()
-                .is_some_and(|f| f == Edge::Both || f == Edge::HorizontalEdge)
+            && collision.clone().is_some_and(|f| f == Edge::Both || f == Edge::HorizontalEdge)
         {
-            self.pad_y = (self.ball_y + BALL_WIDTH)
-                .min(PAD_MAX_HEIGTH)
-                .max(PAD_MIN_HEIGTH);
+            self.pad_y = (self.ball_y + BALL_WIDTH).min(PAD_MAX_HEIGTH).max(PAD_MIN_HEIGTH);
         } else if self.pad_y < self.ball_y
             && y > self.ball_y
-            && collision
-                .clone()
-                .is_some_and(|f| f == Edge::Both || f == Edge::HorizontalEdge)
+            && collision.clone().is_some_and(|f| f == Edge::Both || f == Edge::HorizontalEdge)
         {
             self.pad_y = self.ball_y.min(PAD_MAX_HEIGTH).max(PAD_MIN_HEIGTH);
         } else {
@@ -295,9 +267,7 @@ impl<'a> App<'a> {
 
         if (self.pad_x + PAD_WIDTH) > (self.ball_x + BALL_WIDTH)
             && x < (self.ball_x + BALL_WIDTH)
-            && collision
-                .clone()
-                .is_some_and(|f| f == Edge::Both || f == Edge::VerticalEdge)
+            && collision.clone().is_some_and(|f| f == Edge::Both || f == Edge::VerticalEdge)
         {
             self.pad_x = self.ball_x + BALL_WIDTH;
         } else if self.pad_x < self.ball_x
